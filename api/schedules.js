@@ -80,7 +80,7 @@ app.post('/schedules', async (req, res) => {
     level: req.body.level,
     term: req.body.term,
     year: req.body.year,
-    days: req.body.schedules[0].days, // Extract nested days array
+    days: req.body.days, // Extract nested days array
   });
 
   try {
