@@ -6,9 +6,19 @@ const mongoose = require('mongoose');
 // Create an Express application
 const app = express();
 
+// CORS configuration
+const corsOptions = {
+  origin: ['http://localhost:4200', 'https://your-angular-app-url'], // Add your Angular app URL here
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // Enable this if you need to send cookies or authentication tokens
+};
+
+// Apply CORS with specific options
+app.use(cors(corsOptions));
+
 // Middleware to handle JSON data and enable CORS
 app.use(express.json());
-app.use(cors());
 
 // MongoDB connection using environment variable for the URI
 mongoose
@@ -161,6 +171,9 @@ app.delete('/schedules/:id', async (req, res) => {
       .json({ message: 'Failed to delete schedule', error: err.message });
   }
 });
+
+// Preflight OPTIONS request handling
+app.options('*', cors(corsOptions)); // Enable preflight for all routes
 
 // Set the port dynamically using the environment variable or fallback to 3000
 const port = process.env.PORT || 3000;
