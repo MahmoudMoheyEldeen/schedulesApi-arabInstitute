@@ -79,21 +79,31 @@ app.get('/schedules/:id', async (req, res) => {
   }
 });
 
-// POST route to add a new schedule
+// POST route to add a new schedule (auto-generate id)
 app.post('/schedules', async (req, res) => {
-  const { id, division, level, term, year, days } = req.body;
+  const { division, level, term, year, days } = req.body;
 
-  // Basic validation to check if all fields are provided
-  if (!id || !division || !level || !term || !year || !days) {
+  // Basic validation to check if all required fields are provided
+  if (!division || !level || !term || !year || !days) {
     return res
       .status(400)
       .json({
-        message:
-          'All fields (id, division, level, term, year, days) are required',
+        message: 'All fields (division, level, term, year, days) are required',
       });
   }
 
-  const schedule = new Schedule({ id, division, level, term, year, days });
+  // Generate the next `id` (find the current highest id and increment it)
+  let maxId = await Schedule.findOne().sort({ id: -1 }).select('id');
+  const newId = maxId ? maxId.id + 1 : 1;
+
+  const schedule = new Schedule({
+    id: newId,
+    division,
+    level,
+    term,
+    year,
+    days,
+  });
 
   try {
     const newSchedule = await schedule.save();
