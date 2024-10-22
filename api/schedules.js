@@ -12,28 +12,31 @@ app.use(cors());
 
 // MongoDB connection using environment variable for the URI
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log('Connected to MongoDB Atlas'))
   .catch((err) => {
     console.error('Failed to connect to MongoDB:', err.message);
     process.exit(1);
   });
 
-// Define the Schedule Schema
+// Define the Schedule Schema with validation
 const scheduleSchema = new mongoose.Schema({
-  id: Number,
-  division: String,
-  level: String,
-  term: String,
-  year: String,
+  id: { type: Number, unique: true },
+  division: { type: String, required: true },
+  level: { type: String, required: true },
+  term: { type: String, required: true },
+  year: { type: String, required: true },
   days: [
     {
-      name: String, // Day name
+      name: { type: String, required: true }, // Day name
       subjects: [
         {
-          hour: String,
-          subject: String,
-          prof: String,
+          hour: { type: String, required: true },
+          subject: { type: String, required: true },
+          prof: { type: String, default: '' }, // Default to an empty string
         },
       ],
     },
@@ -54,9 +57,11 @@ app.get('/', (req, res) => {
 app.get('/schedules', async (req, res) => {
   try {
     const schedules = await Schedule.find();
-    res.json(schedules);
+    res.status(200).json(schedules);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to retrieve schedules', error: err.message });
   }
 });
 
@@ -66,44 +71,55 @@ app.get('/schedules/:id', async (req, res) => {
     const schedule = await Schedule.findOne({ id: req.params.id });
     if (!schedule)
       return res.status(404).json({ message: 'Schedule not found' });
-    res.json(schedule);
+    res.status(200).json(schedule);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to retrieve schedule', error: err.message });
   }
 });
 
 // POST route to add a new schedule
 app.post('/schedules', async (req, res) => {
-  const schedule = new Schedule({
-    id: req.body.id,
-    division: req.body.division,
-    level: req.body.level,
-    term: req.body.term,
-    year: req.body.year,
-    days: req.body.days, // Extract nested days array
-  });
+  const { id, division, level, term, year, days } = req.body;
+
+  // Basic validation to check if all fields are provided
+  if (!id || !division || !level || !term || !year || !days) {
+    return res
+      .status(400)
+      .json({
+        message:
+          'All fields (id, division, level, term, year, days) are required',
+      });
+  }
+
+  const schedule = new Schedule({ id, division, level, term, year, days });
 
   try {
     const newSchedule = await schedule.save();
     res.status(201).json(newSchedule);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res
+      .status(400)
+      .json({ message: 'Failed to create schedule', error: err.message });
   }
 });
 
-// PUT route to update a schedule's information
+// PUT route to update a schedule's information by ID
 app.put('/schedules/:id', async (req, res) => {
   try {
     const updatedSchedule = await Schedule.findOneAndUpdate(
       { id: req.params.id },
       req.body,
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!updatedSchedule)
       return res.status(404).json({ message: 'Schedule not found' });
-    res.json(updatedSchedule);
+    res.status(200).json(updatedSchedule);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    res
+      .status(400)
+      .json({ message: 'Failed to update schedule', error: err.message });
   }
 });
 
@@ -115,9 +131,11 @@ app.delete('/schedules/:id', async (req, res) => {
     });
     if (!deletedSchedule)
       return res.status(404).json({ message: 'Schedule not found' });
-    res.status(204).send(); // No content response
+    res.status(204).send(); // No content response on successful deletion
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to delete schedule', error: err.message });
   }
 });
 
