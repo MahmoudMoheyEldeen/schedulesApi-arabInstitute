@@ -79,39 +79,52 @@ app.get('/schedules/:id', async (req, res) => {
   }
 });
 
-// POST route to add a new schedule (auto-generate id)
+// POST route to add new schedules (handles array of schedules)
 app.post('/schedules', async (req, res) => {
-  const { division, level, term, year, days } = req.body;
+  const { schedules } = req.body;
 
-  // Basic validation to check if all required fields are provided
-  if (!division || !level || !term || !year || !days) {
-    return res
-      .status(400)
-      .json({
-        message: 'All fields (division, level, term, year, days) are required',
-      });
+  // Check if schedules array exists and has at least one schedule
+  if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+    return res.status(400).json({
+      message:
+        'Schedules array is required and should contain at least one schedule',
+    });
   }
 
-  // Generate the next `id` (find the current highest id and increment it)
-  let maxId = await Schedule.findOne().sort({ id: -1 }).select('id');
-  const newId = maxId ? maxId.id + 1 : 1;
-
-  const schedule = new Schedule({
-    id: newId,
-    division,
-    level,
-    term,
-    year,
-    days,
-  });
-
   try {
-    const newSchedule = await schedule.save();
-    res.status(201).json(newSchedule);
+    // Loop through the schedules array and save each schedule
+    for (const scheduleData of schedules) {
+      const { division, level, term, year, days } = scheduleData;
+
+      // Basic validation to check if all fields in the schedule are provided
+      if (!division || !level || !term || !year || !days) {
+        return res.status(400).json({
+          message:
+            'All fields (division, level, term, year, days) are required for each schedule',
+        });
+      }
+
+      // Generate the next `id` (find the current highest id and increment it)
+      let maxId = await Schedule.findOne().sort({ id: -1 }).select('id');
+      const newId = maxId ? maxId.id + 1 : 1;
+
+      const schedule = new Schedule({
+        id: newId,
+        division,
+        level,
+        term,
+        year,
+        days,
+      });
+
+      await schedule.save(); // Save each schedule
+    }
+
+    res.status(201).json({ message: 'Schedules created successfully' });
   } catch (err) {
     res
       .status(400)
-      .json({ message: 'Failed to create schedule', error: err.message });
+      .json({ message: 'Failed to create schedules', error: err.message });
   }
 });
 
