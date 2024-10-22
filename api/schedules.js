@@ -24,19 +24,18 @@ const scheduleSchema = new mongoose.Schema({
   id: Number,
   division: String,
   level: String,
+  term: String,
+  year: String,
   days: [
     {
-      day: String,
-    },
-  ],
-  hours: [
-    {
-      hour: String,
-    },
-  ],
-  subjects: [
-    {
-      subject: String,
+      name: String, // Day name
+      subjects: [
+        {
+          hour: String,
+          subject: String,
+          prof: String,
+        },
+      ],
     },
   ],
 });
@@ -79,9 +78,9 @@ app.post('/schedules', async (req, res) => {
     id: req.body.id,
     division: req.body.division,
     level: req.body.level,
-    days: req.body.days,
-    hours: req.body.hours,
-    subjects: req.body.subjects,
+    term: req.body.term,
+    year: req.body.year,
+    days: req.body.schedules[0].days, // Extract nested days array
   });
 
   try {
