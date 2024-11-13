@@ -34,7 +34,7 @@ mongoose
 
 // Define the Schedule Schema with validation
 const scheduleSchema = new mongoose.Schema({
-  id: { type: String, unique: true },
+  id: { type: Number, unique: true },
   division: { type: String, required: true },
   level: { type: String, required: true },
   term: { type: String, required: true },
