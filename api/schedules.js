@@ -8,16 +8,16 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:4200', 'https://your-angular-app-url'], // Add your Angular app URL here
+  origin: ['http://localhost:4200', 'https://your-angular-app-url'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true, // Enable this if you need to send cookies or authentication tokens
+  credentials: true,
 };
 
 // Apply CORS with specific options
 app.use(cors(corsOptions));
 
-// Middleware to handle JSON data and enable CORS
+// Middleware to handle JSON data
 app.use(express.json());
 
 // MongoDB connection using environment variable for the URI
@@ -45,8 +45,12 @@ const scheduleSchema = new mongoose.Schema({
       subjects: [
         {
           hour: { type: String, required: true },
-          subject: { type: String, required: true },
-          prof: { type: String, default: '' }, // Default to an empty string
+          content: [
+            {
+              subject: { type: String, required: true },
+              prof: { type: String, default: '' },
+            },
+          ],
         },
       ],
     },
@@ -93,7 +97,6 @@ app.get('/schedules/:id', async (req, res) => {
 app.post('/schedules', async (req, res) => {
   const { schedules } = req.body;
 
-  // Check if schedules array exists and has at least one schedule
   if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
     return res.status(400).json({
       message:
@@ -102,11 +105,9 @@ app.post('/schedules', async (req, res) => {
   }
 
   try {
-    // Loop through the schedules array and save each schedule
     for (const scheduleData of schedules) {
       const { division, level, term, year, days } = scheduleData;
 
-      // Basic validation to check if all fields in the schedule are provided
       if (!division || !level || !term || !year || !days) {
         return res.status(400).json({
           message:
@@ -114,7 +115,6 @@ app.post('/schedules', async (req, res) => {
         });
       }
 
-      // Generate the next `id` (find the current highest id and increment it)
       let maxId = await Schedule.findOne().sort({ id: -1 }).select('id');
       const newId = maxId ? maxId.id + 1 : 1;
 
@@ -127,7 +127,7 @@ app.post('/schedules', async (req, res) => {
         days,
       });
 
-      await schedule.save(); // Save each schedule
+      await schedule.save();
     }
 
     res.status(201).json({ message: 'Schedules created successfully' });
@@ -164,7 +164,7 @@ app.delete('/schedules/:id', async (req, res) => {
     });
     if (!deletedSchedule)
       return res.status(404).json({ message: 'Schedule not found' });
-    res.status(204).send(); // No content response on successful deletion
+    res.status(204).send();
   } catch (err) {
     res
       .status(500)
@@ -173,12 +173,11 @@ app.delete('/schedules/:id', async (req, res) => {
 });
 
 // Preflight OPTIONS request handling
-app.options('*', cors(corsOptions)); // Enable preflight for all routes
+app.options('*', cors(corsOptions));
 
 // Set the port dynamically using the environment variable or fallback to 3000
 const port = process.env.PORT || 3000;
 
-// Start the server and listen on the specified port
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
