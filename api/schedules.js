@@ -79,10 +79,12 @@ app.get('/schedules', async (req, res) => {
   }
 });
 
-// GET route to retrieve a specific schedule by ID
+// GET route to retrieve a specific schedule by either id or _id
 app.get('/schedules/:id', async (req, res) => {
   try {
-    const schedule = await Schedule.findOne({ id: req.params.id });
+    const schedule = await Schedule.findOne({
+      $or: [{ id: req.params.id }, { _id: req.params.id }],
+    });
     if (!schedule)
       return res.status(404).json({ message: 'Schedule not found' });
     res.status(200).json(schedule);
@@ -142,7 +144,7 @@ app.post('/schedules', async (req, res) => {
 app.put('/schedules/:id', async (req, res) => {
   try {
     const updatedSchedule = await Schedule.findOneAndUpdate(
-      { id: req.params.id },
+      { $or: [{ id: req.params.id }, { _id: req.params.id }] },
       req.body,
       { new: true, runValidators: true }
     );
@@ -156,11 +158,11 @@ app.put('/schedules/:id', async (req, res) => {
   }
 });
 
-// DELETE route to remove a schedule by ID
+// DELETE route to remove a schedule by ID or _id
 app.delete('/schedules/:id', async (req, res) => {
   try {
     const deletedSchedule = await Schedule.findOneAndDelete({
-      id: req.params.id,
+      $or: [{ id: req.params.id }, { _id: req.params.id }],
     });
     if (!deletedSchedule)
       return res.status(404).json({ message: 'Schedule not found' });
