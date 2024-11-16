@@ -140,7 +140,7 @@ app.post('/schedules', async (req, res) => {
 
           // Format content within each subject
           const formattedContent = subject.content.map((contentItem) => {
-            if (!contentItem.subject || !contentItem.prof) {
+            if (!contentItem.subject) {
               throw new Error(
                 'Each content item must have both subject and prof fields.'
               );
