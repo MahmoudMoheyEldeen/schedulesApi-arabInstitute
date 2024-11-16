@@ -48,7 +48,7 @@ const scheduleSchema = new mongoose.Schema({
           content: [
             {
               subject: { type: String, required: true },
-              prof: { type: String, required: true },
+              prof: { type: String },
             },
           ],
         },
